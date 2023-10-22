@@ -2,7 +2,6 @@ import math
 import os
 import time
 import numpy as np
-from copy import deepcopy
 
 (WIDTH, HEIGHT) = os.get_terminal_size()
 print(WIDTH, HEIGHT)
