@@ -17,8 +17,8 @@ counter = 0
 
 def plot(x, y, z, char='#'):
     global out, zBuffer
-    col = round(WIDTH / 2 + x * 2.3 - 1)
-    row = round(HEIGHT / 2 - y - 1)
+    col = round(WIDTH / 2 + x - 1)
+    row = round(HEIGHT / 2 - y * 0.5- 1)
 
     if z == 0:
         z = 1
@@ -89,7 +89,7 @@ def rotateD(x, y, z, a, u=None):
     m = 1 - c
 
     if not u:
-        u = [math.sqrt(3) / 3, math.sqrt(3) / 3, math.sqrt(3) / 3]
+        u = [math.sqrt(3) / 3, math.sqrt(3) / 3,-math.sqrt(3) / 3]
 
     _x = x * (c + u[0] * u[0] * m) + y * (u[0] * u[1] * m +
                                           u[2] * s) + z * (u[0] * u[2] * m - u[1] * s)
@@ -132,44 +132,44 @@ def plotCube(a):
 
 
 def plotHCube(a):
-    C = 2
+    C = 1
     s = 40
     for u in range(-s // 2, s // 2, 1):
         u = u / C
         w = s / (2 * C)
 
         (x, y, z) = rotateD(u, w, w, a)
-        plot(x, y, z, '#')
+        plot(x, y, z)
         (x, y, z) = rotateD(u, -w, w, a)
-        plot(x, y, z, '#')
+        plot(x, y, z)
         (x, y, z) = rotateD(u, w, -w, a)
-        plot(x, y, z, '#')
+        plot(x, y, z)
         (x, y, z) = rotateD(u, -w, -w, a)
-        plot(x, y, z, '#')
+        plot(x, y, z)
 
         (x, y, z) = rotateD(w, u, w, a)
-        plot(x, y, z, '#')
+        plot(x, y, z)
         (x, y, z) = rotateD(-w, u, w, a)
-        plot(x, y, z, '#')
+        plot(x, y, z)
         (x, y, z) = rotateD(w, u, -w, a)
-        plot(x, y, z, '#')
+        plot(x, y, z)
         (x, y, z) = rotateD(-w, u, -w, a)
-        plot(x, y, z, '#')
+        plot(x, y, z)
 
         (x, y, z) = rotateD(w, w, u, a)
-        plot(x, y, z, '#')
+        plot(x, y, z)
         (x, y, z) = rotateD(-w, w, u, a)
-        plot(x, y, z, '#')
+        plot(x, y, z)
         (x, y, z) = rotateD(w, -w, u, a)
-        plot(x, y, z, '#')
+        plot(x, y, z)
         (x, y, z) = rotateD(-w, -w, u, a)
-        plot(x, y, z, '#')
+        plot(x, y, z)
 
 
-for a in range(0, 2*360 + 1, 1):  # for every angle [0, 360]
+for a in range(0, 10*360 + 1, 1):  # for every angle [0, 360]
     out = [[' ' for i in range(WIDTH)] for j in range(HEIGHT)]
     zBuffer = [[-1111 for i in range(WIDTH)] for j in range(HEIGHT)]
 
-    plotCube(a)
-    # time.sleep(0.08)
+    plotHCube(a)
+    #time.sleep(0.01)
     draw()

@@ -3,7 +3,6 @@ import os
 import time
 import numpy as np
 
-
 (WIDTH, HEIGHT) = os.get_terminal_size()
 
 pi = np.pi
@@ -13,26 +12,29 @@ cos = np.cos
 out = np.full((HEIGHT, WIDTH), ' ')
 points = []
 
+plot_scale = [1, 0.5]
+camera_pos = [0, 0]
 
-def scale(x, out_range=(0, 1), axis=None):
-    domain = np.min(x, axis), np.max(x, axis)
-    y = (x - (domain[1] + domain[0]) / 2) / (domain[1] - domain[0])
-    return y * (out_range[1] - out_range[0]) + (out_range[1] + out_range[0]) / 2
+
+def addPoint(x, y, z):
+    points.append(np.array([x,y,z]))
 
 
 def plot():
     col = row = -1
 
-    for (x, y, z) in points:
-        col = round(WIDTH / 2 + x * 2.3 - 1)
-        row = round(HEIGHT / 2 - y - 1)
+    for p in points:
+        (x, y, z) = p
+        # center of screen, offset by scaled pos and camera pos
+        col = round(WIDTH / 2 + x * plot_scale[0] - camera_pos[0] - 1)
+        row = round(HEIGHT / 2 - y * plot_scale[1] + camera_pos[1] - 1)
 
         if((0 <= col < WIDTH) and (0 <= row < HEIGHT)):
-            out[row][col] = '·'
+            out[row][col] = '#'
 
 
 def draw():
-    #os.system('cls')
+    # os.system('cls')
 
     for row in range(HEIGHT):
         for col in range(WIDTH):
@@ -65,13 +67,32 @@ def RZ(a):
     ])
 
 
-if __name__ == "__main__": #······
+def hollowCube(s):
+    for u in range(-s // 2, s // 2, 1):
+        v = s // 2
+
+        addPoint(u, v, v)
+        addPoint(u, -v, v)
+        addPoint(u, v, -v)
+        addPoint(u, -v, -v)
+
+        addPoint(v, u, v)
+        addPoint(-v, u, v)
+        addPoint(v, u, -v)
+        addPoint(-v, u, -v)
+
+        addPoint(v, v, u)
+        addPoint(-v, v, u)
+        addPoint(v, -v, u)
+        addPoint(-v, -v, u)
+
+
+if __name__ == "__main__":  # ······
     print(WIDTH, HEIGHT)
 
-    points += [[0, 0, 0]]
-    points += [[20, 2, 3]]
-    points += [[-7, 6, 0]]
-    print(points)
+    hollowCube(30)
 
+    #points = np.dot(points, RZ(pi / 4))
+    
     plot()
     draw()
