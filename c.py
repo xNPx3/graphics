@@ -10,7 +10,7 @@ sin = np.sin
 cos = np.cos
 
 deg = (pi / 180)
-#light = ".,-~:;=!*#$@"
+# light = ".,-~:;=!*#$@"
 light = "░▒▓█"
 
 out = np.full((HEIGHT, WIDTH), ' ')
@@ -34,6 +34,7 @@ def addPoint(x, y, z):
     p = np.array([x, y, z])
     points = np.vstack([points, p])
 
+
 # ······
 """
 if out[row][col] != ' ':
@@ -42,15 +43,16 @@ if out[row][col] != ' ':
         else:
 """
 
-def plot():
+
+def plot(data):
     col = row = -1
 
-    zvalues = points[:, 2]
+    zvalues = data[:, 2]
     zmin = np.min(zvalues)
     zmax = np.max(zvalues)
     # z_norm = (zvalues-np.min(zvalues))/(np.max(zvalues)-np.min(zvalues))
 
-    for p in points:
+    for p in data:
         (x, y, z) = p.T
         # center of screen, offset by scaled pos and camera pos
         col = round(WIDTH / 2 + x.item() * plot_scale[0] - camera_pos[0] - 1)
@@ -59,10 +61,10 @@ def plot():
         if (0 <= col < WIDTH) and (0 <= row < HEIGHT):
             z_norm = ((-z - zmin) / (zmax - zmin)).item()
             if z_norm > zbfr[row][col]:
-                
+
                 i = round(z_norm * (len(light) - 1))
                 char = light[i]
-            
+
                 out[row][col] = char
                 zbfr[row][col] = z_norm
 
@@ -103,9 +105,10 @@ def RZ(a):
         [0, 0, 1]
     ])
 
+
 def hollowCube(s):
     v = s // 2
-    for u in range(-s // 2, s // 2, 1):
+    for u in range(-v, v, 1):
         addPoint(u, v, v)
         addPoint(u, -v, v)
         addPoint(u, v, -v)
@@ -121,10 +124,34 @@ def hollowCube(s):
         addPoint(v, -v, u)
         addPoint(-v, -v, u)
 
+
+def hollowCube2(s):
+    v = s // 2
+    obj = np.array([[v, v, v]])
+
+    for u in range(-v, v, 1):
+        obj = np.concatenate((obj, np.mat([
+            [u, v, v],
+            [u, -v, v],
+            [u, v, -v],
+            [u, -v, -v],
+            [v, u, v],
+            [-v, u, v],
+            [v, u, -v],
+            [-v, u, -v],
+            [v, v, u],
+            [-v, v, u],
+            [v, -v, u],
+            [-v, -v, u],
+        ])))
+
+    return obj
+
+
 def filledCube(s):
     w = s // 2
-    for u in range(-s // 2, s // 2, 1):
-        for v in range(-s // 2, s // 2, 1):
+    for u in range(-w, w, 1):
+        for v in range(-w, w, 1):
             addPoint(u, v, w)
             addPoint(u, w, v)
             addPoint(w, u, v)
@@ -139,18 +166,19 @@ if __name__ == "__main__":
     #points = np.dot(points, RY(60 * deg))
     #points = np.dot(points, RX(45 * deg))
 
-    hollowCube(40)
-    
-    points = np.dot(points, RY(60 * deg))
-    points = np.dot(points, RX(45 * deg))
+    hcube = hollowCube2(30)
+    print(hcube, np.shape(hcube))
 
-    plot()
+    hcube = hcube @ RY(60 * deg) @ RX(45 * deg)
+
+    plot(hcube)
     draw()
 
-    time.sleep(2)
-
+    # time.sleep(2)
+"""
     for i in range(2 * 360):
         points = points @ RY(1 * deg) @ RZ(1 * deg)
-        plot()
+        plot(points)
         draw()
         time.sleep(0.05)
+"""
