@@ -20,6 +20,8 @@ points = np.mat([0, 0, 0])
 plot_scale = [1, 0.5]
 camera_pos = [0, 0]
 
+np.seterr(divide='ignore', invalid='ignore')
+
 
 def clear():
     global points, out, zbfr
@@ -61,7 +63,7 @@ def plot(data):
         if (0 <= col < WIDTH) and (0 <= row < HEIGHT):
             z_norm = ((-z - zmin) / (zmax - zmin)).item()
             if z_norm > zbfr[row][col]:
-
+                # TODO: light source position
                 i = round(z_norm * (len(light) - 1))
                 char = light[i]
 
@@ -103,6 +105,14 @@ def RZ(a):
         [cos(a), -sin(a), 0],
         [sin(a), cos(a), 0],
         [0, 0, 1]
+    ])
+
+
+def translate(x, y, z):
+    return np.mat([
+        [x, 0, 0],
+        [0, y, 0],
+        [0, 0, z]
     ])
 
 
@@ -163,18 +173,24 @@ def filledCube(s):
 
 if __name__ == "__main__":
     print(WIDTH, HEIGHT)
-    #points = np.dot(points, RY(60 * deg))
-    #points = np.dot(points, RX(45 * deg))
 
     hcube = hollowCube2(30)
-    print(hcube, np.shape(hcube))
-
     hcube = hcube @ RY(60 * deg) @ RX(45 * deg)
 
     plot(hcube)
+
+    hcube2 = hollowCube2(10)
+    hcube2 = hcube2 @ RY(-20 * deg) @ RX(20 * deg)
+    plot(hcube2)
+
+    draw()
+    time.sleep(2)
+
+    hcube2 = hcube2 @ translate(2, 1, 0)
+    plot(hcube2)
     draw()
 
-    # time.sleep(2)
+
 """
     for i in range(2 * 360):
         points = points @ RY(1 * deg) @ RZ(1 * deg)
