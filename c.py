@@ -22,7 +22,8 @@ zbfr = np.zeros((HEIGHT, WIDTH))
 points = np.mat([0, 0, 0])
 
 plot_scale = [1, 0.5]
-camera_pos = [0, 0, -10]
+camera_pos = [0, 0, 0]
+plane = [0, 0, 1]
 
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -49,6 +50,79 @@ if out[row][col] != ' ':
         else:
 """
 
+# https://paroj.github.io/gltut/Positioning/Tut04%20Perspective%20Projection.html
+
+
+def plotfunc_p(p, data):
+    col = row = -1
+    (x_cam, y_cam, z_cam) = camera_pos
+    (px, py, pz) = p.T
+
+    R = np.dot(p, (z_cam - plane[2]) / (z_cam - pz).item())
+    (x, y, z) = R.T
+
+    N = 1  # zNear
+    F = 10  # zFar
+    Z_clip = (z.item() * (N + F)) / (N - F) + (2 * N * F) / (N - F)
+
+    zvalues = data[:, 2]
+    zmin = np.min(zvalues)
+    zmax = np.max(zvalues)
+    C = 20
+
+    # center of screen, offset by scaled pos and camera pos
+    col = round(WIDTH / 2 + x.item() * C * plot_scale[0] - camera_pos[0] - 1)
+    row = round(HEIGHT / 2 - y.item() * C * plot_scale[1] + camera_pos[1] - 1)
+
+    if (0 <= col < WIDTH) and (0 <= row < HEIGHT):
+        z_norm = ((pz.item() - zmin) / (zmax - zmin))
+
+        # out[row][col] = '#'
+        if z_norm >= zbfr[row][col]:
+            # TODO: light source position
+            i = round(z_norm * (len(light) - 1))
+            char = light[i]
+
+            out[row][col] = char
+            zbfr[row][col] = z_norm
+
+
+def plotfunc_p2(p, data):
+    col = row = -1
+    (x_cam, y_cam, z_cam) = camera_pos
+    (px, py, pz) = p.T
+
+    # calculate ???
+
+    c_x = (px.item() * (plane[2] - z_cam)) / pz.item()
+    c_y = (py.item() * (plane[2] - z_cam)) / pz.item()
+    #print(pr_x, pr_y)
+
+    zvalues = data[:, 2]
+    zmin = np.min(zvalues)
+    zmax = np.max(zvalues)
+    
+    A = 1
+    B = [WIDTH, HEIGHT]
+
+    # center of screen, offset by scaled pos and camera pos
+    col = round(WIDTH / 2 + c_x * A * B[0] * plot_scale[0] - camera_pos[0] - 1)
+    row = round(HEIGHT / 2 - c_y * A * B[1] * plot_scale[1] + camera_pos[1] - 1)
+
+
+    if (0 <= col < WIDTH) and (0 <= row < HEIGHT):
+        z_norm = ((pz.item() - zmin) / (zmax - zmin))
+
+        # out[row][col] = '#'
+        if z_norm >= zbfr[row][col]:
+            # TODO: light source position
+            i = round(z_norm * (len(light) - 1))
+            char = light[i]
+
+            out[row][col] = char
+            zbfr[row][col] = z_norm
+            
+
 
 def plotfunc(p, data):
     col = row = -1
@@ -63,7 +137,7 @@ def plotfunc(p, data):
     row = round(HEIGHT / 2 - y.item() * plot_scale[1] + camera_pos[1] - 1)
 
     if (0 <= col < WIDTH) and (0 <= row < HEIGHT):
-        z_norm = ((z - zmin) / (zmax - zmin)).item()
+        z_norm = ((z.item() - zmin) / (zmax - zmin))
         #print(zmin, zmax, z_norm, end=' | ')
         if z_norm >= zbfr[row][col]:
             # TODO: light source position
@@ -76,7 +150,7 @@ def plotfunc(p, data):
 
 def plot(data):
     #print(type(data), data)
-    np.apply_along_axis(plotfunc, 1, data, data)
+    np.apply_along_axis(plotfunc_p2, 1, data, data)
 
 
 def old_draw(clear=True):
@@ -161,8 +235,13 @@ if __name__ == "__main__":
 
     v = np.sqrt(3) / 3
     rot1 = np.array([-v, -v, -v])
-
-    c1 = multi_dot([c1, Y(35 * deg), X(20 * deg)])
-    c1 = translate(c1, [0, 0, 0])
+    c1 = translate(c1, [10, -10, 50])
     plot(c1)
     draw()
+    """
+    c1 = translate(c1, [0, 0, 30])
+    while True:
+        c1 = multi_dot([c1, Y(1 * deg)])
+        plot(c1)
+        draw()
+"""
