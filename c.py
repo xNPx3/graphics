@@ -64,7 +64,7 @@ def plotfunc(p, data):
 
     if (0 <= col < WIDTH) and (0 <= row < HEIGHT):
         z_norm = ((z - zmin) / (zmax - zmin)).item()
-        print(zmin, zmax, z_norm, end=' | ')
+        #print(zmin, zmax, z_norm, end=' | ')
         if z_norm >= zbfr[row][col]:
             # TODO: light source position
             i = round(z_norm * (len(light) - 1))
@@ -164,16 +164,5 @@ if __name__ == "__main__":
 
     c1 = multi_dot([c1, Y(35 * deg), X(20 * deg)])
     c1 = translate(c1, [0, 0, 0])
-    # plot(c1)
-
-    #plot(np.mat([[10, 10, -1], [0, 0, -10]]))
-    # draw()
-
-    for i in range(301):
-        c = 2 * pi * (i / 100)
-        r = 20
-        x = np.cos(c) * r
-        y = np.sin(c) * r
-        plot(np.mat([[0, 0, 0], [x, y, 1], [-x, -y, 1]]))
-        draw()
-        time.sleep(0.02)
+    plot(c1)
+    draw()
