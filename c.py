@@ -53,7 +53,7 @@ if out[row][col] != ' ':
 # https://paroj.github.io/gltut/Positioning/Tut04%20Perspective%20Projection.html
 
 
-def plotfunc_p(p, data):
+def plotfunc_p1(p, data):
     col = row = -1
     (x_cam, y_cam, z_cam) = camera_pos
     (px, py, pz) = p.T
@@ -96,19 +96,20 @@ def plotfunc_p2(p, data):
 
     c_x = (px.item() * (plane[2] - z_cam)) / pz.item()
     c_y = (py.item() * (plane[2] - z_cam)) / pz.item()
+    c_z = plane[2] - z_cam
     #print(pr_x, pr_y)
 
     zvalues = data[:, 2]
     zmin = np.min(zvalues)
     zmax = np.max(zvalues)
-    
+
     A = 1
-    B = [WIDTH, HEIGHT]
+    B = [30, 30]
 
     # center of screen, offset by scaled pos and camera pos
     col = round(WIDTH / 2 + c_x * A * B[0] * plot_scale[0] - camera_pos[0] - 1)
-    row = round(HEIGHT / 2 - c_y * A * B[1] * plot_scale[1] + camera_pos[1] - 1)
-
+    row = round(HEIGHT / 2 - c_y * A * B[1]
+                * plot_scale[1] + camera_pos[1] - 1)
 
     if (0 <= col < WIDTH) and (0 <= row < HEIGHT):
         z_norm = ((pz.item() - zmin) / (zmax - zmin))
@@ -116,12 +117,39 @@ def plotfunc_p2(p, data):
         # out[row][col] = '#'
         if z_norm >= zbfr[row][col]:
             # TODO: light source position
-            i = round(z_norm * (len(light) - 1))
+            lum = (len(light) - 1)
+            i = round(z_norm * lum)
             char = light[i]
 
             out[row][col] = char
             zbfr[row][col] = z_norm
-            
+
+
+def plotfunc_p3(p, data):
+    col = row = -1
+    (x_cam, y_cam, z_cam) = camera_pos
+    (px, py, pz) = p.T
+
+    P = np.append(np.array(p), [1])
+    #print(P)
+
+    F = 100
+    N = 0.1
+
+    FOV = 90
+
+    S = 1 / (np.tan((FOV / 2) * (pi / 180)))
+
+    tr = np.mat([
+        [S, 0, 0, 0],
+        [0, S, 0, 0],
+        [0, 0, - F / (F - N), -1],
+        [0, 0, -(F * N) / (F - N), 0]
+    ])
+
+    PR = np.dot(P, tr)
+    PR = np.divide(PR, np.array(PR)[0][3])
+    print(PR)
 
 
 def plotfunc(p, data):
@@ -150,7 +178,7 @@ def plotfunc(p, data):
 
 def plot(data):
     #print(type(data), data)
-    np.apply_along_axis(plotfunc_p2, 1, data, data)
+    np.apply_along_axis(plotfunc_p3, 1, data, data)
 
 
 def old_draw(clear=True):
@@ -235,7 +263,7 @@ if __name__ == "__main__":
 
     v = np.sqrt(3) / 3
     rot1 = np.array([-v, -v, -v])
-    c1 = translate(c1, [10, -10, 50])
+    c1 = translate(c1, [20, -10, 45])
     plot(c1)
     draw()
     """
