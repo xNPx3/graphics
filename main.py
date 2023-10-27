@@ -10,6 +10,7 @@ from objects import *
 
 
 (WIDTH, HEIGHT) = os.get_terminal_size()
+W2, H2 = WIDTH // 2, HEIGHT // 2
 SHADE = "░▒▓█"
 LIGHT_INTENSITY = 1
 #SHADE = ''.join(_ * LIGHT_INTENSITY for _ in SHADE)
@@ -91,8 +92,8 @@ def plot(points):
         (x, y, z) = p.T
 
         # center of screen, offset by scaled pos and camera pos
-        col = int(WIDTH / 2 + x * SCALING[0] - CAMERA_POS[0] - 1)
-        row = int(HEIGHT / 2 - y * SCALING[1] + CAMERA_POS[1] - 1)
+        col = int(W2 + x * SCALING[0] - CAMERA_POS[0] - 1)
+        row = int(H2 - y * SCALING[1] + CAMERA_POS[1] - 1)
 
         if (0 <= col < WIDTH) and (0 <= row < HEIGHT):
             z_norm = ((z - zmin) / (zmax - zmin))
@@ -114,15 +115,15 @@ def plot(points):
 
 def plotXYAxis():  # Draw the X and Y axises
     for row in range(HEIGHT):
-        FRAME_BUFFER[row][WIDTH // 2] = '│'
+        FRAME_BUFFER[row][W2] = '│'
 
     for col in range(WIDTH):
-        FRAME_BUFFER[HEIGHT // 2][col] = '─'
+        FRAME_BUFFER[H2][col] = '─'
 
-    FRAME_BUFFER[HEIGHT // 2][col] = 'X'
-    FRAME_BUFFER[0][WIDTH // 2] = 'Y'
+    FRAME_BUFFER[H2][col] = 'X'
+    FRAME_BUFFER[0][W2] = 'Y'
 
-    FRAME_BUFFER[HEIGHT // 2][WIDTH // 2] = '┼'
+    FRAME_BUFFER[H2][W2] = '┼'
 
 
 def translate(data, delta):  # cheap point translation function
@@ -135,7 +136,7 @@ def main():
     c1 = cube(20)
     c1 = translate(c1, [30, 0, 0])
     while CURRENT_FRAME < 100:
-        c1 = multi_dot([c1, Y(rad(1))])
+        c1 = multi_dot([c1, Y(np.radians(1))])
         plotXYAxis()
         plot(c1)
         draw_optimized()
