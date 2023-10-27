@@ -1,8 +1,10 @@
 import math
 import os
+import sys
 import time
 import numpy as np
 
+from colorama import Fore
 from numpy.linalg import multi_dot
 
 from rotations import *
@@ -11,9 +13,9 @@ from objects import *
 
 (WIDTH, HEIGHT) = os.get_terminal_size()
 W2, H2 = WIDTH // 2, HEIGHT // 2
-SHADE = "░▒▓█"
+SHADE = ['░', '▒', '▓', '█']
 LIGHT_INTENSITY = 1
-#SHADE = ''.join(_ * LIGHT_INTENSITY for _ in SHADE)
+SHADE_LEN = len(SHADE) - 1
 
 FRAME_BUFFER = np.full((HEIGHT, WIDTH), ' ')
 Z_BUFFER = np.zeros((HEIGHT, WIDTH))
@@ -23,13 +25,13 @@ FRAMETIME = 0
 SCALING = [1, 0.5]
 CAMERA_POS = [0, 0, 0]
 PLANE_POS = [0, 0, 1]
-LIGHT_POS = [0, 0, 0]  # not implemented
+LIGHT_POS = [0, 1, -10]
 
 # np.seterr(divide='ignore', invalid='ignore')
 
 
 def rad(a):  # degrees to radians
-    return a * (np.pi / 180)
+    return np.radians(a)
 
 
 def clearBuffers():  # clear frame buffers
@@ -41,14 +43,13 @@ def clearBuffers():  # clear frame buffers
     Z_BUFFER = np.zeros((HEIGHT, WIDTH))
 
 
-def draw():  # draw frame buffer to terminal
+def draw():  # draw frame buffer to terminal (optimized)
     global CURRENT_FRAME, FRAMETIME
 
     # dont print last row to prevent jittering
-    for row in range(HEIGHT - 1):
-        for col in range(WIDTH):
-            print(FRAME_BUFFER[row][col], end='')
-        print()
+    F = np.ravel(FRAME_BUFFER[:-1])
+    p = ''.join(F)
+    print(p, end='')
 
     clearBuffers()
 
@@ -58,72 +59,81 @@ def draw():  # draw frame buffer to terminal
     FRAMETIME = t
 
     # bottom row for debugging
-    print(f'{SHADE} | F:{CURRENT_FRAME} | FPS:{FPS} | {WIDTH}x{HEIGHT} | debug', end=' ')
-
-    # cursor to home position (top left)
-    print(f'\033[H', end='')
-
-
-def draw_optimized():  # draw frame buffer to terminal (optimized)
-    global CURRENT_FRAME, FRAMETIME
-
-    # dont print last row to prevent jittering
-    p = np.ravel(FRAME_BUFFER[:-1])
-    print(''.join(p), end='')
-
-    clearBuffers()
-
-    t = time.time()
-    FPS = round(1 / (t - FRAMETIME))
-    CURRENT_FRAME += 1
-    FRAMETIME = t
-
-    # bottom row for debugging
-    print(f'{SHADE} | F:{CURRENT_FRAME} | FPS:{FPS} | {WIDTH}x{HEIGHT} | debug', end=' ')
+    print(f'{"".join(s for s in SHADE)} | F:{CURRENT_FRAME} | FPS:{FPS} | {WIDTH}x{HEIGHT} | debug', end=' ')
 
     # cursor to home position (top left)
     print(f'\033[H', end='')
 
 
 def plot(points):
-    def _plot(p, zmin, zmax, shading):
-        col = row = -1
-
-        (x, y, z) = p.T
+    def _plot(P, MIN, MAX):
+        (x, y, z, *w) = P.T
 
         # center of screen, offset by scaled pos and camera pos
         col = int(W2 + x * SCALING[0] - CAMERA_POS[0] - 1)
         row = int(H2 - y * SCALING[1] + CAMERA_POS[1] - 1)
 
         if (0 <= col < WIDTH) and (0 <= row < HEIGHT):
-            z_norm = ((z - zmin) / (zmax - zmin))
-            if z_norm >= Z_BUFFER[row][col]:
-                # TODO: light source position
-                i = round(z_norm * shading)
+            NORM = ((z - MIN) / (MAX - MIN))
+            if NORM >= Z_BUFFER[row][col]:
+                #LIGHT_DIST = np.linalg.norm(LIGHT_POS-P)
+
+                i = round(NORM * SHADE_LEN)
 
                 FRAME_BUFFER[row][col] = SHADE[i]
-                Z_BUFFER[row][col] = z_norm
+                Z_BUFFER[row][col] = NORM
 
+    zvalues = points[:, 2]
+    zMin = np.min(zvalues)
+    zMax = np.max(zvalues)
+
+    # apply function for every point (slow)
+    np.apply_along_axis(_plot, 1, points, zMin, zMax)
+
+
+def plot_optimized(points):  # optimized by chatgpt
     zvalues = points[:, 2]
     zmin = np.min(zvalues)
     zmax = np.max(zvalues)
-    s = (len(SHADE) - 1)
 
-    # apply function for every point
-    np.apply_along_axis(_plot, 1, points, zmin, zmax, s)
+    # Precompute constants
+    z_diff = zmax - zmin
+    z_buffer = (points[:, 2] - zmin) / z_diff
+    i_values = (z_buffer * (len(SHADE) - 1)).round().astype(int)
+
+    # Calculate col and row indices
+    x = points[:, 0]
+    y = points[:, 1]
+    col = ((x * SCALING[0] - CAMERA_POS[0] - 1) + W2).astype(int)
+    row = (H2 - (y * SCALING[1] + CAMERA_POS[1] - 1)).astype(int)
+
+    # Create masks for valid indices
+    valid_col = (col >= 0) & (col < WIDTH)
+    valid_row = (row >= 0) & (row < HEIGHT)
+    valid_indices = valid_col & valid_row
+
+    # Update frame and z buffers using boolean indexing
+    frame_indices = valid_indices & (
+        z_buffer >= Z_BUFFER[row[valid_indices], col[valid_indices]])
+    Z_BUFFER[row[valid_indices][frame_indices], col[valid_indices]
+             [frame_indices]] = z_buffer[frame_indices]
+
+    # Use i_values as an index to print characters from SHADE
+    FRAME_BUFFER[row[valid_indices][frame_indices], col[valid_indices]
+                 [frame_indices]] = [SHADE[i] for i in i_values[frame_indices]]
 
 
 def plotXYAxis():  # Draw the X and Y axises
     for row in range(HEIGHT):
-        FRAME_BUFFER[row][W2] = '│'
+        FRAME_BUFFER[row][W2 - 1] = '│'
 
     for col in range(WIDTH):
-        FRAME_BUFFER[H2][col] = '─'
+        FRAME_BUFFER[H2 - 1][col] = '─'
 
-    FRAME_BUFFER[H2][col] = 'X'
-    FRAME_BUFFER[0][W2] = 'Y'
+    FRAME_BUFFER[H2 - 1][col] = 'X'
+    FRAME_BUFFER[0][W2 - 1] = 'Y'
 
-    FRAME_BUFFER[H2][W2] = '┼'
+    FRAME_BUFFER[H2 - 1][W2 - 1] = '┼'
 
 
 def translate(data, delta):  # cheap point translation function
@@ -135,17 +145,27 @@ def translate(data, delta):  # cheap point translation function
 def main():
     c1 = cube(20)
     c1 = translate(c1, [30, 0, 0])
-    while CURRENT_FRAME < 100:
+
+    while CURRENT_FRAME < 10000:
         c1 = multi_dot([c1, Y(np.radians(1))])
         plotXYAxis()
         plot(c1)
-        draw_optimized()
+        draw()
 
 
 if __name__ == "__main__":
     os.system('cls')
     print('\033[?25l', end='')
 
-    main()
+    # main()
 
-    print('\033[2J', end='\033[?25h')
+    cube = Object(cubeV, 20)
+    cube.translate([50, 15, 0])
+
+    while CURRENT_FRAME < 10000:
+        cube.rotate(Y(rad(1)))
+        plotXYAxis()
+        plot(cube.points)
+        draw()
+
+    #print('\033[2J', end='\033[?25h')

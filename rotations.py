@@ -1,31 +1,31 @@
 import numpy as np
 
-# Rotate around X-axis
-def X(a=0):
+
+def X(a=0):  # Rotate around X-axis
     return np.array([
         [1, 0, 0],
         [0, np.cos(a), -np.sin(a)],
         [0, np.sin(a), np.cos(a)]
     ])
 
-# Rotate around Y-axis
-def Y(a=0):
+
+def Y(a=0):  # Rotate around Y-axis
     return np.array([
         [np.cos(a), 0, np.sin(a)],
         [0, 1, 0],
         [-np.sin(a), 0, np.cos(a)]
     ])
 
-# Rotate around Z-axis
-def Z(a=0):
+
+def Z(a=0):  # Rotate around Z-axis
     return np.array([
         [np.cos(a), -np.sin(a), 0],
         [np.sin(a), np.cos(a), 0],
         [0, 0, 1]
     ])
 
-# Rotate around an arbitrary axis
-def Axis(a, unit):
+
+def Axis(a, unit):  # Rotate around an arbitrary axis
     (x, y, z) = unit.T
     sin = np.sin(a)
     cos = np.cos(a)
