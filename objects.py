@@ -66,7 +66,7 @@ def circle(r, a=100):
     return (obj, obj.copy())
 
 
-def ball(r, a=100):
+def sphere(r, a=100):
     from rotations import X, Y, Z
     obj = np.array([[r, 0, 0]])
 
@@ -89,6 +89,38 @@ def ball(r, a=100):
     return (obj, obj.copy())
 
 
+def tetrahedron(s):
+    from rotations import X
+    oos = 1 / np.sqrt(2)
+    obj = np.array([[0, 0, oos * s]])
+    for t in range(-s, s, 1):
+        u = t / 2 + s / 2
+        v = t / 2 - s / 2
+        obj = np.concatenate((obj, np.array([
+            [0, t, oos * s],
+            [t, 0, -oos * s],
+
+            [v, u, t * oos],
+            [-v, u, t * oos],
+            [v, -u, t * oos],
+            [-v, -u, t * oos],
+        ])))
+
+    obj = np.dot(obj, X(np.radians(35)))
+
+    return (obj, obj.copy())
+
+
+def tetrahedron2(s):
+    h = s ** 2
+    obj = np.array([
+        [0, 0, 0],
+        [s, 0, 0],
+        [s / 2, np.sqrt(h + h/4), 0],
+        [s / 2, 0, np.sqrt(h + h/4)]
+    ])
+
+
 class Object():
     pos = points = points_local = np.array([0, 0, 0])
 
@@ -103,11 +135,12 @@ class Object():
         self.points = np.apply_along_axis(_translate, 1, self.points, delta)
         self.pos = self.pos + delta
 
-    def rotate(self, *rot):
+    def rotate(self, *rot):  # translate - rotate - translate
         self.points_local = np.linalg.multi_dot([self.points_local, *rot])
         self.points = self.points_local
-        self.translate(self.pos)
-        
+        _pos = self.pos.copy()
+        self.pos = np.array([0, 0, 0])
+        self.translate(_pos)
 
     def rotate_around(self, *rot):
         self.points = np.linalg.multi_dot([self.points, *rot])

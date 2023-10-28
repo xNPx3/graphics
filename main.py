@@ -59,7 +59,7 @@ def draw():  # draw frame buffer to terminal (optimized)
     FRAMETIME = t
 
     # bottom row for debugging
-    print(f'{"".join(s for s in SHADE)} | F:{CURRENT_FRAME} | FPS:{FPS} | {WIDTH}x{HEIGHT} | debug', end=' ')
+    print(f'{"".join(s for s in SHADE)} | F:{CURRENT_FRAME} | FPS:{FPS} | {WIDTH}x{HEIGHT}', end=' ')
 
     # cursor to home position (top left)
     print(f'\033[H', end='')
@@ -136,20 +136,14 @@ def plotXYAxis():  # Draw the X and Y axises
     FRAME_BUFFER[H2 - 1][W2 - 1] = '┼'
 
 
-def translate(data, delta):  # cheap point translation function
-    def _translate(p, d: np.array):
-        return np.sum([p, np.array(d)], axis=0)
-    return np.apply_along_axis(_translate, 1, data, delta)
-
-
 def main():
-    c1 = cube(20)
-    c1 = translate(c1, [30, 0, 0])
+    cube = Object(cubeV, 20)
+    cube.translate([50, 15, 0])
 
-    while CURRENT_FRAME < 10000:
-        c1 = multi_dot([c1, Y(np.radians(1))])
+    while CURRENT_FRAME < 100:
+        cube.rotate(Y(rad(1)))
         plotXYAxis()
-        plot(c1)
+        plot(cube.points)
         draw()
 
 
@@ -157,15 +151,6 @@ if __name__ == "__main__":
     os.system('cls')
     print('\033[?25l', end='')
 
-    # main()
+    main()
 
-    cube = Object(cubeV, 20)
-    cube.translate([50, 15, 0])
-
-    while CURRENT_FRAME < 10000:
-        cube.rotate(Y(rad(1)))
-        plotXYAxis()
-        plot(cube.points)
-        draw()
-
-    #print('\033[2J', end='\033[?25h')
+    print('\033[2J', end='\033[?25h')
