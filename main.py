@@ -1,11 +1,7 @@
 import math
 import os
-import sys
 import time
 import numpy as np
-
-from colorama import Fore
-from numpy.linalg import multi_dot
 
 from rotations import *
 from objects import *
@@ -14,7 +10,6 @@ from objects import *
 (WIDTH, HEIGHT) = os.get_terminal_size()
 W2, H2 = WIDTH // 2, HEIGHT // 2
 SHADE = ['░', '▒', '▓', '█']
-LIGHT_INTENSITY = 1
 SHADE_LEN = len(SHADE) - 1
 
 FRAME_BUFFER = np.full((HEIGHT, WIDTH), ' ')
@@ -24,17 +19,26 @@ FRAMETIME = 0
 
 SCALING = [1, 0.5]
 CAMERA_POS = [0, 0, 0]
-PLANE_POS = [0, 0, 1]
-LIGHT_POS = [0, 1, -10]
+
+FOV = 70
+ASPECT_RATIO = WIDTH / HEIGHT
+
+focal_length = 1 / np.tan(np.deg2rad(FOV / 2))
 
 # np.seterr(divide='ignore', invalid='ignore')
 
 
-def rad(a):  # degrees to radians
+def rad(a):
+    """
+        Alias for np.radians()
+    """
     return np.radians(a)
 
 
-def clearBuffers():  # clear frame buffers
+def clearBuffers():
+    """
+        Clears the frame- and z-buffer
+    """
     global FRAME_BUFFER, Z_BUFFER
 
     # FRAME_BUFFER = np.where(FRAME_BUFFER != ' ', ' ', ' ')
@@ -43,7 +47,10 @@ def clearBuffers():  # clear frame buffers
     Z_BUFFER = np.zeros((HEIGHT, WIDTH))
 
 
-def draw():  # draw frame buffer to terminal (optimized)
+def draw():
+    """
+        Prints the current frame to the terminal
+    """
     global CURRENT_FRAME, FRAMETIME
 
     # dont print last row to prevent jittering
@@ -66,6 +73,9 @@ def draw():  # draw frame buffer to terminal (optimized)
 
 
 def plot(points):
+    """
+        Array of points in world space -> characters in the frame-buffer
+    """
     def _plot(P, MIN, MAX):
         (x, y, z, *w) = P.T
 
@@ -89,6 +99,52 @@ def plot(points):
 
     # apply function for every point (slow)
     np.apply_along_axis(_plot, 1, points, zMin, zMax)
+
+
+def plotp(points):
+    """
+    Array of points in world space -> characters in the frame-buffer with perspective projection
+    """
+    def _plot(P, MIN, MAX):
+        (x, y, z, *w) = P.T
+
+        # Apply perspective projection
+        xp = (focal_length * x) / z * 20
+        yp = (focal_length * y) / z * 20
+
+        # Translate and scale the projected point
+        col = int(W2 + xp * SCALING[0] - CAMERA_POS[0] - 1)
+        row = int(H2 - yp * SCALING[1] + CAMERA_POS[1] - 1)
+
+        if (0 <= col < WIDTH) and (0 <= row < HEIGHT):
+            NORM = ((z - MAX) / (MIN - MAX))
+            if NORM >= Z_BUFFER[row][col]:
+                i = round(NORM * SHADE_LEN)
+                FRAME_BUFFER[row][col] = SHADE[i]
+                Z_BUFFER[row][col] = NORM
+
+    zvalues = points[:, 2]
+    zMin = np.min(zvalues)
+    zMax = np.max(zvalues)
+
+    # apply function for every point (slow)
+    np.apply_along_axis(_plot, 1, points, zMin, zMax)
+
+
+def plotXYAxis():
+    """
+        Draws the X and Y axis
+    """
+    for row in range(HEIGHT):
+        FRAME_BUFFER[row][W2 - 1] = '│'
+
+    for col in range(WIDTH):
+        FRAME_BUFFER[H2 - 1][col] = '─'
+
+    FRAME_BUFFER[H2 - 1][col] = 'X'
+    FRAME_BUFFER[0][W2 - 1] = 'Y'
+
+    FRAME_BUFFER[H2 - 1][W2 - 1] = '┼'
 
 
 def plot_optimized(points):  # optimized by chatgpt
@@ -123,22 +179,9 @@ def plot_optimized(points):  # optimized by chatgpt
                  [frame_indices]] = [SHADE[i] for i in i_values[frame_indices]]
 
 
-def plotXYAxis():  # Draw the X and Y axises
-    for row in range(HEIGHT):
-        FRAME_BUFFER[row][W2 - 1] = '│'
-
-    for col in range(WIDTH):
-        FRAME_BUFFER[H2 - 1][col] = '─'
-
-    FRAME_BUFFER[H2 - 1][col] = 'X'
-    FRAME_BUFFER[0][W2 - 1] = 'Y'
-
-    FRAME_BUFFER[H2 - 1][W2 - 1] = '┼'
-
-
 def main():
     cube = Object(cubeV, 20)
-    cube.translate([50, 15, 0])
+    cube.translate([20, 5, 20])
 
     while CURRENT_FRAME < 100:
         cube.rotate(Y(rad(1)))

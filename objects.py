@@ -1,7 +1,10 @@
 import numpy as np
 
 
-def cubeV(s):  # Cube with only the vertices
+def cubeV(s): 
+    """
+        Cube edges
+    """
     # dividing by two so the points are put around (0, 0, 0)
     v = s // 2
     obj = np.array([[v, v, v]])
@@ -28,7 +31,10 @@ def cubeV(s):  # Cube with only the vertices
     return (obj, obj.copy())
 
 
-def cube(s):  # Normal cube
+def cube(s):
+    """
+        Cube with filled faces
+    """
     w = s // 2
     obj = np.array([[w, w, w]])
 
@@ -49,6 +55,10 @@ def cube(s):  # Normal cube
 
 
 def circle(r, a=100):
+    """
+        2D circle
+    """
+
     from rotations import X
     obj = np.array([[r, 0, -1]])
 
@@ -67,6 +77,9 @@ def circle(r, a=100):
 
 
 def sphere(r, a=100):
+    """
+        3D Sphere (not filled)
+    """
     from rotations import X, Y, Z
     obj = np.array([[r, 0, 0]])
 
@@ -90,6 +103,9 @@ def sphere(r, a=100):
 
 
 def tetrahedron(s):
+    """
+        3D tetrahedron
+    """
     from rotations import X
     oos = 1 / np.sqrt(2)
     obj = np.array([[0, 0, oos * s]])
@@ -122,6 +138,9 @@ def tetrahedron2(s):
 
 
 class Object():
+    """
+        Initializes an object from a points function
+    """
     pos = points = points_local = np.array([0, 0, 0])
 
     def __init__(self, func, *args):
@@ -130,18 +149,27 @@ class Object():
         self.points_local = pl
 
     def translate(self, delta: np.array):
+        """
+            Translates the object by a vector
+        """
         def _translate(p, d: np.array):
             return np.sum([p, np.array(d)], axis=0)
         self.points = np.apply_along_axis(_translate, 1, self.points, delta)
         self.pos = self.pos + delta
 
     def rotate(self, *rot):  # translate - rotate - translate
+        """
+            Rotates the object in local space
+        """
         self.points_local = np.linalg.multi_dot([self.points_local, *rot])
         self.points = self.points_local
         _pos = self.pos.copy()
         self.pos = np.array([0, 0, 0])
         self.translate(_pos)
 
-    def rotate_around(self, *rot):
+    def rotate_world(self, *rot):
+        """
+            Rotates the object in world space
+        """
         self.points = np.linalg.multi_dot([self.points, *rot])
         self.pos = np.linalg.multi_dot([self.pos, *rot])
